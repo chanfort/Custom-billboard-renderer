@@ -1,4 +1,4 @@
-# Custom static billboards
+# Custom billboards renderer
 
 ![Large scale forest](Images/Forest.png)
 ![Space objects](Images/SpaceObjects.png)
@@ -20,9 +20,9 @@ Pros:
 
 Cons:
 - No culling, all billboards will be rendered, including these which are behind the camera.
-- Passing native arrays into Mesh API is currently the main bottleneck and is distibuted over multiple frames, so if there are millions of objects, full refresh can take about a second. Objects will update in the background without blocking the main thread.
+- Passing native arrays into Mesh API is currently the main bottleneck and is distributed over multiple frames, so if there are millions of objects, full refresh can take about a second. Objects will update in the background without blocking the main thread.
 - Some performance spikes can still occur while moving camera when there are large number of objects.
 - Slightly worse performance compared to build in Unity tree billboards.
-- Similarly like for Unity tree bilboards, only one rotation is supported per billboard type.
+- Similarly like for Unity tree billboards, only one rotation is supported per billboard type.
 - Billboards can cast shadows but they appear paper thin when camera looks in near perpendicular direction to the directional light.
-- While different shaders work, it can be tricky to set mathing lighting between model and billboard phases over different times of day. Currently the best working shaders seems to be unlit shaders for billboards.
+- While different shaders work, it can be tricky to set matching lighting between model and billboard phases over different times of day. Currently the best working shaders seems to be unlit shaders for billboards.
