@@ -1,4 +1,4 @@
-# Custom billboards renderer
+# Custom billboard renderer
 
 ![Large scale forest](Images/Forest.png)
 ![Space objects](Images/SpaceObjects.png)
