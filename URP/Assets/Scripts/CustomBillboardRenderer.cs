@@ -4,8 +4,9 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
 using System.Collections.Generic;
+using UnityEngine.Rendering;
 
-public class BillboardRenderer
+public class CustomBillboardRenderer
 {
     public Material billboardMaterial;
 
@@ -81,7 +82,8 @@ public class BillboardRenderer
 
         previousCameraPosition = cameraPos;
         previousCameraRotation = mainCameraTransform.rotation;
-        if(lightTransform != null)
+
+        if (lightTransform != null)
         {
             previousLightRotation = lightTransform.rotation;
         }
@@ -91,25 +93,25 @@ public class BillboardRenderer
     {
         positions.Dispose();
         FinishSchedules();
-        
+
         positions = newPositions;
 
-        if(calculationPhase.IsCreated)
+        if (calculationPhase.IsCreated)
         {
             calculationPhase.Dispose();
         }
-        
+
         n = newPositions.Length;
 
-        for(int i=0; i<combinedFarIndicesListPrev.Count; i++)
+        for (int i = 0; i < combinedFarIndicesListPrev.Count; i++)
         {
-            if(combinedFarIndicesListPrev[i].IsCreated)
+            if (combinedFarIndicesListPrev[i].IsCreated)
             {
                 combinedFarIndicesListPrev[i].Dispose();
             }
         }
         combinedFarIndicesListPrev.Clear();
-        for(int i=0; i<n; i++)
+        for (int i = 0; i < n; i++)
         {
             combinedFarIndicesListPrev.Add(new NativeArray<int>());
         }
@@ -119,7 +121,7 @@ public class BillboardRenderer
             positions[i] += meshOffset;
         }
         calculationPhase = new NativeArray<short>(n, Allocator.Persistent);
-        
+
         SplitLod();
         UpdateInstanceRotations(mainCameraTransform.position);
         BatchStart();
@@ -130,9 +132,10 @@ public class BillboardRenderer
     {
         Mesh copyMesh = MonoBehaviour.Instantiate(mesh);
         Vector3[] copyVertices = copyMesh.vertices;
-        Vector3 center = copyMesh.bounds.center;
 
-        for(int i=0; i<copyVertices.Length; i++)
+        Vector3 center = mesh.bounds.center;
+
+        for (int i = 0; i < copyVertices.Length; i++)
         {
             copyVertices[i] -= center;
         }
@@ -153,9 +156,9 @@ public class BillboardRenderer
 
     public void Update()
     {
-        if(calculating)
+        if (calculating)
         {
-            if(batchHandleComplete)
+            if (batchHandleComplete)
             {
                 BatchProceed();
             }
@@ -165,7 +168,7 @@ public class BillboardRenderer
             }
         }
 
-        if(!initialized)
+        if (!initialized)
         {
             return;
         }
@@ -181,7 +184,7 @@ public class BillboardRenderer
         {
             int globalId = nearIndices[i];
             short cPhase = calculationPhase[globalId];
-            
+
             for (int j = 0; j < materials.Length; j++)
             {
                 Graphics.DrawMesh(mesh, nearPositions[i], Quaternion.identity, materials[j], 0, mainCamera, j, null, castShadows, receiveShadows);
@@ -192,7 +195,7 @@ public class BillboardRenderer
         {
             int globalId = transitioningIndices[i];
             short cPhase = calculationPhase[globalId];
-            if(cPhase == 1 || cPhase == 3)
+            if (cPhase == 1 || cPhase == 3)
             {
                 for (int j = 0; j < materials.Length; j++)
                 {
@@ -201,7 +204,7 @@ public class BillboardRenderer
             }
         }
     }
-    
+
     void UpdateCamera()
     {
         float3 currentCameraPosition = mainCameraTransform.position;
@@ -220,7 +223,7 @@ public class BillboardRenderer
             previousCameraRotation = currentCameraRotation;
             Capture();
         }
-        else if(lightTransform != null)
+        else if (lightTransform != null)
         {
             quaternion currentLightRotation = lightTransform.rotation;
             if (Quaternion.Angle(lightTransform.rotation, previousLightRotation) > 5f)
@@ -267,7 +270,7 @@ public class BillboardRenderer
         transitioningIndices = Resize(transitioningIndices, transitioningCount[0]);
 
         float3 offset = float3.zero;
-        if(treeMode)
+        if (treeMode)
         {
             offset = new float3(0f, -bounds.maxSize, 0f);
         }
@@ -325,7 +328,7 @@ public class BillboardRenderer
                 float cameraDist = math.lengthsq(cameraPos - positions[i]);
                 if (cameraDist < maxDistanceSqr)
                 {
-                    if(calculationPhase[i] == 2)
+                    if (calculationPhase[i] == 2)
                     {
                         isTransitioning[i] = true;
                         tcount++;
@@ -335,7 +338,7 @@ public class BillboardRenderer
                         isTransitioning[i] = false;
                     }
 
-                    if(calculationPhase[i] == 1 || calculationPhase[i] == 0)
+                    if (calculationPhase[i] == 1 || calculationPhase[i] == 0)
                     {
                         isNear[i] = true;
                         ncount++;
@@ -350,7 +353,7 @@ public class BillboardRenderer
                     isFar[i] = true;
                     fcount++;
 
-                    if(calculationPhase[i] == 1)
+                    if (calculationPhase[i] == 1)
                     {
                         isTransitioning[i] = true;
                         tcount++;
@@ -398,12 +401,12 @@ public class BillboardRenderer
                     nearPositions[iNear] = positions[i];
                     nearIndices[iNear] = i;
                     iNear++;
-                    
-                    if(currentCalculationPhase == 0)
+
+                    if (currentCalculationPhase == 0)
                     {
                         calculationPhase[i] = 1;
                     }
-                    else if(currentCalculationPhase == 2)
+                    else if (currentCalculationPhase == 2)
                     {
                         calculationPhase[i] = 4;
                     }
@@ -412,17 +415,17 @@ public class BillboardRenderer
                         calculationPhase[i] = 1;
                     }
                 }
-                else if(isFar[i])
+                else if (isFar[i])
                 {
                     farPositions[iFar] = positions[i] + offset;
                     farIndices[iFar] = i;
                     iFar++;
 
-                    if(currentCalculationPhase == 0)
+                    if (currentCalculationPhase == 0)
                     {
                         calculationPhase[i] = 2;
                     }
-                    else if(currentCalculationPhase == 1)
+                    else if (currentCalculationPhase == 1)
                     {
                         calculationPhase[i] = 3;
                     }
@@ -432,11 +435,11 @@ public class BillboardRenderer
                     }
                 }
 
-                if(isTransitioning[i])
+                if (isTransitioning[i])
                 {
                     transitioningPositions[iTransitioning] = positions[i];
                     transitioningIndices[iTransitioning] = i;
-                    if(currentCalculationPhase == 2)
+                    if (currentCalculationPhase == 2)
                     {
                         calculationPhase[i] = 4;
                     }
@@ -463,19 +466,23 @@ public class BillboardRenderer
 
         billboardNativeMesh = GetBillboardMesh();
 
-        int nVerticesBillboardMesh = billboardNativeMesh.vertices.Length;
+        int nVerticesBillboardMesh = billboardNativeMesh.verticesData.Length;
         int nTrianglesBillboardMesh = billboardNativeMesh.triangles.Length;
 
         int positionsPerSplit = 15000;
         nSplits = farPositions.Length / positionsPerSplit + 1;
 
-        for (int i = 0; i < billboardNativeMesh.vertices.Length; i++)
+        for (int i = 0; i < billboardNativeMesh.verticesData.Length; i++)
         {
-            if(treeMode)
+            VertexData vertexData = billboardNativeMesh.verticesData[i];
+
+            if (treeMode)
             {
-                billboardNativeMesh.vertices[i] += new float3(0f, 0.5f, 0f);
+                vertexData.pos += new float3(0f, 0.5f, 0f);
             }
-            billboardNativeMesh.vertices[i] *= 2f * bounds.maxSize;
+            vertexData.pos *= 2f * bounds.maxSize;
+
+            billboardNativeMesh.verticesData[i] = vertexData;
         }
 
         combinedNativeMeshes.Clear();
@@ -495,9 +502,8 @@ public class BillboardRenderer
 
             int nGroup = imax - imin;
 
-            NativeArray<float3> combinedVertices = new NativeArray<float3>(nGroup * nVerticesBillboardMesh, Allocator.Persistent);
-            NativeArray<float3> combinedNormals = new NativeArray<float3>(nGroup * nVerticesBillboardMesh, Allocator.Persistent);
-            NativeArray<float2> combinedUvs = new NativeArray<float2>(nGroup * nVerticesBillboardMesh, Allocator.Persistent);
+            NativeArray<VertexData> combinedVerticesData = new NativeArray<VertexData>(nGroup * nVerticesBillboardMesh, Allocator.Persistent);
+
             NativeArray<int> combinedTriangles = new NativeArray<int>(nGroup * nTrianglesBillboardMesh, Allocator.Persistent);
 
             NativeArray<float3> groupPositions = new NativeArray<float3>(nGroup, Allocator.Persistent);
@@ -517,9 +523,7 @@ public class BillboardRenderer
 
             batchJobHandle = new CalculateCombinedMeshJob
             {
-                vertices = billboardNativeMesh.vertices,
-                normals = billboardNativeMesh.normals,
-                uvs = billboardNativeMesh.uv,
+                verticesData = billboardNativeMesh.verticesData,
                 triangles = billboardNativeMesh.triangles,
 
                 nVerticesBillboardMesh = nVerticesBillboardMesh,
@@ -528,9 +532,8 @@ public class BillboardRenderer
                 groupPositions = groupPositions,
                 groupRotations = groupRotations,
 
-                combinedVertices = combinedVertices,
-                combinedNormals = combinedNormals,
-                combinedUvs = combinedUvs,
+                combinedVerticesData = combinedVerticesData,
+
                 combinedTriangles = combinedTriangles
             }.Schedule(nGroup, 4, batchJobHandle);
 
@@ -539,9 +542,7 @@ public class BillboardRenderer
 
             combinedNativeMeshes.Add(
                 new NativeMesh(
-                    combinedVertices,
-                    combinedNormals,
-                    combinedUvs,
+                    combinedVerticesData,
                     combinedTriangles
                 )
             );
@@ -555,7 +556,7 @@ public class BillboardRenderer
 
     void BatchJobCheck()
     {
-        if(!batchJobHandle.IsCompleted)
+        if (!batchJobHandle.IsCompleted)
         {
             return;
         }
@@ -564,9 +565,9 @@ public class BillboardRenderer
         batchHandleComplete = true;
 
         recreate = false;
-        if(combinedMeshes == null || combinedMeshes.Length != nSplits)
+        if (combinedMeshes == null || combinedMeshes.Length != nSplits)
         {
-            if(combinedMeshes != null)
+            if (combinedMeshes != null)
             {
                 for (int l = 0; l < combinedMeshes.Length; l++)
                 {
@@ -575,12 +576,12 @@ public class BillboardRenderer
 
                 for (int l = 0; l < combinedFarIndicesListPrev.Count; l++)
                 {
-                    for(int j=0; j<combinedFarIndicesListPrev[l].Length; j++)
+                    for (int j = 0; j < combinedFarIndicesListPrev[l].Length; j++)
                     {
-                        
+
                         int phase = calculationPhase[combinedFarIndicesListPrev[l][j]];
-                        
-                        if(phase == 4)
+
+                        if (phase == 4)
                         {
                             calculationPhase[combinedFarIndicesListPrev[l][j]] = 1;
                         }
@@ -589,7 +590,7 @@ public class BillboardRenderer
             }
             combinedMeshes = new Mesh[nSplits];
             recreate = true;
-            
+
         }
 
         currentBatch = 0;
@@ -599,7 +600,7 @@ public class BillboardRenderer
     int currentBatch;
     void BatchProceed()
     {
-        if(recreate)
+        if (recreate)
         {
             combinedMeshes[currentBatch] = new Mesh();
         }
@@ -607,10 +608,10 @@ public class BillboardRenderer
         {
             combinedMeshes[currentBatch].Clear();
 
-            for(int j=0; j<combinedFarIndicesListPrev[currentBatch].Length; j++)
+            for (int j = 0; j < combinedFarIndicesListPrev[currentBatch].Length; j++)
             {
                 int phase = calculationPhase[combinedFarIndicesListPrev[currentBatch][j]];
-                if(phase == 4)
+                if (phase == 4)
                 {
                     calculationPhase[combinedFarIndicesListPrev[currentBatch][j]] = 1;
                 }
@@ -619,7 +620,7 @@ public class BillboardRenderer
 
         combinedNativeMeshes[currentBatch].PassToMesh(combinedMeshes[currentBatch]);
 
-        for(int i=0; i<combinedFarIndicesList[currentBatch].Length; i++)
+        for (int i = 0; i < combinedFarIndicesList[currentBatch].Length; i++)
         {
             calculationPhase[combinedFarIndicesList[currentBatch][i]] = 2;
         }
@@ -627,7 +628,7 @@ public class BillboardRenderer
         combinedNativeMeshes[currentBatch].Dispose();
         currentBatch++;
 
-        if(currentBatch >= nSplits)
+        if (currentBatch >= nSplits)
         {
             BatchFinish();
             currentBatch = 0;
@@ -638,7 +639,7 @@ public class BillboardRenderer
     {
         billboardNativeMesh.Dispose();
 
-        for(int i=0; i<combinedFarIndicesListPrev.Count; i++)
+        for (int i = 0; i < combinedFarIndicesListPrev.Count; i++)
         {
             CheckAndDispose(combinedFarIndicesListPrev[i]);
         }
@@ -650,25 +651,33 @@ public class BillboardRenderer
 
     NativeMesh GetBillboardMesh()
     {
-        NativeArray<float3> vertices = new NativeArray<float3>(4, Allocator.Persistent);
-        NativeArray<float3> normals = new NativeArray<float3>(4, Allocator.Persistent);
-        NativeArray<float2> uv = new NativeArray<float2>(4, Allocator.Persistent);
+        NativeArray<VertexData> verticesData = new NativeArray<VertexData>(4, Allocator.Persistent);
+
+        verticesData[0] = GetVertexData(
+            new float3(-0.5f, -0.5f, 0f),
+            new float3(0f, 0f, -1f),
+            new float2(0f, 0f)
+        );
+
+        verticesData[1] = GetVertexData(
+            new float3(0.5f, -0.5f, 0f),
+            new float3(0f, 0f, -1f),
+            new float2(1f, 0f)
+        );
+
+        verticesData[2] = GetVertexData(
+            new float3(-0.5f, 0.5f, 0f),
+            new float3(0f, 0f, -1f),
+            new float2(0f, 1f)
+        );
+
+        verticesData[3] = GetVertexData(
+            new float3(0.5f, 0.5f, 0f),
+            new float3(0f, 0f, -1f),
+            new float2(1f, 1f)
+        );
+
         NativeArray<int> triangles = new NativeArray<int>(6, Allocator.Persistent);
-
-        vertices[0] = new float3(-0.5f, -0.5f, 0f);
-        vertices[1] = new float3(0.5f, -0.5f, 0f);
-        vertices[2] = new float3(-0.5f, 0.5f, 0f);
-        vertices[3] = new float3(0.5f, 0.5f, 0f);
-
-        normals[0] = new float3(0f, 0f, -1f);
-        normals[1] = new float3(0f, 0f, -1f);
-        normals[2] = new float3(0f, 0f, -1f);
-        normals[3] = new float3(0f, 0f, -1f);
-
-        uv[0] = new float2(0f, 0f);
-        uv[1] = new float2(1f, 0f);
-        uv[2] = new float2(0f, 1f);
-        uv[3] = new float2(1f, 1f);
 
         triangles[0] = 0;
         triangles[1] = 3;
@@ -676,14 +685,24 @@ public class BillboardRenderer
         triangles[3] = 3;
         triangles[4] = 0;
         triangles[5] = 2;
-        
-        return new NativeMesh(vertices, normals, uv, triangles);
+
+        return new NativeMesh(verticesData, triangles);
+    }
+
+    VertexData GetVertexData(float3 pos, float3 normal, float2 uv)
+    {
+        return new VertexData
+        {
+            pos = pos,
+            normal = normal,
+            uv = uv
+        };
     }
 
     Vector3[] ToVector3Array(NativeArray<float3> input)
     {
         Vector3[] output = new Vector3[input.Length];
-        for(int i=0; i<input.Length; i++)
+        for (int i = 0; i < input.Length; i++)
         {
             output[i] = input[i];
         }
@@ -693,7 +712,7 @@ public class BillboardRenderer
     Vector2[] ToVector2Array(NativeArray<float2> input)
     {
         Vector2[] output = new Vector2[input.Length];
-        for(int i=0; i<input.Length; i++)
+        for (int i = 0; i < input.Length; i++)
         {
             output[i] = input[i];
         }
@@ -723,9 +742,7 @@ public class BillboardRenderer
     [BurstCompile]
     public struct CalculateCombinedMeshJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float3> vertices;
-        [ReadOnly] public NativeArray<float3> normals;
-        [ReadOnly] public NativeArray<float2> uvs;
+        [ReadOnly] public NativeArray<VertexData> verticesData;
         [ReadOnly] public NativeArray<int> triangles;
 
         [ReadOnly] public int nVerticesBillboardMesh;
@@ -734,10 +751,8 @@ public class BillboardRenderer
         [ReadOnly] public NativeArray<float3> groupPositions;
         [ReadOnly] public NativeArray<quaternion> groupRotations;
 
-        [NativeDisableParallelForRestriction][WriteOnly] public NativeArray<float3> combinedVertices;
-        [NativeDisableParallelForRestriction][WriteOnly] public NativeArray<float3> combinedNormals;
-        [NativeDisableParallelForRestriction][WriteOnly] public NativeArray<float2> combinedUvs;
-        [NativeDisableParallelForRestriction][WriteOnly] public NativeArray<int> combinedTriangles;
+        [NativeDisableParallelForRestriction] [WriteOnly] public NativeArray<VertexData> combinedVerticesData;
+        [NativeDisableParallelForRestriction] [WriteOnly] public NativeArray<int> combinedTriangles;
 
         public void Execute(int i)
         {
@@ -747,9 +762,12 @@ public class BillboardRenderer
             for (int j = 0; j < nVerticesBillboardMesh; j++)
             {
                 int k = i * nVerticesBillboardMesh + j;
-                combinedVertices[k] = pos + math.mul(rot, vertices[j]);
-                combinedNormals[k] = normals[j];
-                combinedUvs[k] = uvs[j];
+
+                VertexData vertexData = verticesData[j];
+                VertexData combinedVertexData = vertexData;
+
+                combinedVertexData.pos = pos + math.mul(rot, vertexData.pos);
+                combinedVerticesData[k] = combinedVertexData;
             }
 
             for (int j = 0; j < nTrianglesBillboardMesh; j++)
@@ -763,9 +781,9 @@ public class BillboardRenderer
 
     bool AllHandlesCompete(List<JobHandle> handles)
     {
-        for(int i=0; i<handles.Count; i++)
+        for (int i = 0; i < handles.Count; i++)
         {
-            if(!handles[i].IsCompleted)
+            if (!handles[i].IsCompleted)
             {
                 return false;
             }
@@ -789,11 +807,11 @@ public class BillboardRenderer
 
     NativeArray<T> Resize<T>(NativeArray<T> input, int length) where T : struct
     {
-        if(input != null)
+        if (input != null)
         {
-            if(input.IsCreated)
+            if (input.IsCreated)
             {
-                if(input.Length != length)
+                if (input.Length != length)
                 {
                     input.Dispose();
                     input = new NativeArray<T>(length, Allocator.Persistent);
@@ -814,7 +832,7 @@ public class BillboardRenderer
 
     void CheckAndDispose<T>(NativeArray<T> input) where T : struct
     {
-        if(input != null && input.IsCreated)
+        if (input != null && input.IsCreated)
         {
             input.Dispose();
         }
@@ -822,12 +840,12 @@ public class BillboardRenderer
 
     void CheckAndDispose<T>(List<NativeArray<T>> inputList) where T : struct
     {
-        if(inputList != null)
+        if (inputList != null)
         {
-            for(int i=0; i<inputList.Count; i++)
+            for (int i = 0; i < inputList.Count; i++)
             {
                 NativeArray<T> input = inputList[i];
-                if(input.IsCreated)
+                if (input.IsCreated)
                 {
                     input.Dispose();
                 }
@@ -952,7 +970,7 @@ public class BillboardRenderer
         CheckAndDispose(calculationPhase);
 
         CheckAndDispose(combinedFarIndicesListPrev);
-        if(combinedFarIndicesList != combinedFarIndicesListPrev)
+        if (combinedFarIndicesList != combinedFarIndicesListPrev)
         {
             CheckAndDispose(combinedFarIndicesList);
         }
@@ -961,17 +979,17 @@ public class BillboardRenderer
 
     public void FinishSchedules()
     {
-        if(!batchHandleComplete)
+        if (!batchHandleComplete)
         {
             batchHandleComplete = true;
             batchJobHandle.Complete();
             BatchJobCheck();
         }
 
-        if(calculating)
+        if (calculating)
         {
-            int nRemaining = nSplits-currentBatch;
-            for(int i=0; i<nRemaining; i++)
+            int nRemaining = nSplits - currentBatch;
+            for (int i = 0; i < nRemaining; i++)
             {
                 BatchProceed();
             }
@@ -989,18 +1007,14 @@ public class BillboardRenderer
 
     public struct NativeMesh
     {
-        public NativeArray<float3> vertices;
-        public NativeArray<float3> normals;
-        public NativeArray<float2> uv;
+        public NativeArray<VertexData> verticesData;
         public NativeArray<int> triangles;
         public bool isCreated;
         public bool meshCreated;
 
-        public NativeMesh(NativeArray<float3> v, NativeArray<float3> n, NativeArray<float2> u, NativeArray<int> t)
+        public NativeMesh(NativeArray<VertexData> v, NativeArray<int> t)
         {
-            vertices = v;
-            normals = n;
-            uv = u;
+            verticesData = v;
             triangles = t;
             isCreated = true;
             meshCreated = false;
@@ -1008,34 +1022,61 @@ public class BillboardRenderer
 
         public void PassToMesh(Mesh mesh)
         {
-            mesh.SetVertices(vertices);
-            mesh.SetNormals(normals);
-            mesh.SetUVs(0, uv);
-            mesh.SetIndices(triangles, MeshTopology.Triangles, 0, false, 0);
+            VertexAttributeDescriptor[] layout = new[]
+            {
+                new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+                new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
+                new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2),
+            };
+
+            int vertexCount = verticesData.Length;
+            int trianglesCount = triangles.Length;
+
+            mesh.SetVertexBufferParams(vertexCount, layout);
+            mesh.SetIndexBufferParams(trianglesCount, IndexFormat.UInt32);
+
+            MeshUpdateFlags flags =
+                MeshUpdateFlags.DontRecalculateBounds |
+                MeshUpdateFlags.DontResetBoneBounds |
+                MeshUpdateFlags.DontValidateIndices |
+                MeshUpdateFlags.DontNotifyMeshUsers;
+
+            mesh.SetVertexBufferData(verticesData, 0, 0, vertexCount, 0, flags);
+            mesh.SetIndexBufferData(triangles, 0, 0, trianglesCount, flags);
+
+            mesh.subMeshCount = 1;
+            SubMeshDescriptor subMeshDescriptor = new SubMeshDescriptor
+            {
+                indexCount = triangles.Length,
+                topology = MeshTopology.Triangles,
+                bounds = new Bounds
+                {
+                    center = float3.zero,
+                    extents = new float3(float.MaxValue, float.MaxValue, float.MaxValue)
+                }
+            };
+
+            mesh.SetSubMesh(0, subMeshDescriptor, flags);
+
+            mesh.bounds = subMeshDescriptor.bounds;
+
             meshCreated = true;
         }
 
         public void Dispose()
         {
-            if(!isCreated || meshCreated)
+            if (!isCreated || meshCreated)
             {
                 return;
             }
 
             isCreated = false;
-            if(vertices != null && vertices.IsCreated)
+
+            if (verticesData != null && verticesData.IsCreated)
             {
-                vertices.Dispose();
+                verticesData.Dispose();
             }
-            if(normals != null && normals.IsCreated)
-            {
-                normals.Dispose();
-            }
-            if(uv != null && uv.IsCreated)
-            {
-                uv.Dispose();
-            }
-            if(triangles != null && triangles.IsCreated)
+            if (triangles != null && triangles.IsCreated)
             {
                 triangles.Dispose();
             }

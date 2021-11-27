@@ -10,7 +10,7 @@ public class BillboardsManager : MonoBehaviour
     public Material billboardMaterial;
     public List<BillboardType> billboardTypes = new List<BillboardType>();
 
-    List<BillboardRenderer> billboardRenderers = new List<BillboardRenderer>();
+    List<CustomBillboardRenderer> billboardRenderers = new List<CustomBillboardRenderer>();
 
     void Awake()
     {
@@ -19,7 +19,7 @@ public class BillboardsManager : MonoBehaviour
         for(int i=0; i<billboardTypes.Count; i++)
         {
             BillboardType billboardType = billboardTypes[i];
-            BillboardRenderer billboardRenderer = new BillboardRenderer
+            CustomBillboardRenderer billboardRenderer = new CustomBillboardRenderer
             {
                 billboardMaterial = Instantiate(billboardMaterial),
                 n = 0,
