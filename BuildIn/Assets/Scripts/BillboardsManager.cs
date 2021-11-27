@@ -10,16 +10,16 @@ public class BillboardsManager : MonoBehaviour
     public Material billboardMaterial;
     public List<BillboardType> billboardTypes = new List<BillboardType>();
 
-    List<BillboardRenderer> billboardRenderers = new List<BillboardRenderer>();
+    List<CustomBillboardRenderer> billboardRenderers = new List<CustomBillboardRenderer>();
 
     void Awake()
     {
         active = this;
 
-        for(int i=0; i<billboardTypes.Count; i++)
+        for (int i = 0; i < billboardTypes.Count; i++)
         {
             BillboardType billboardType = billboardTypes[i];
-            BillboardRenderer billboardRenderer = new BillboardRenderer
+            CustomBillboardRenderer billboardRenderer = new CustomBillboardRenderer
             {
                 billboardMaterial = Instantiate(billboardMaterial),
                 n = 0,
@@ -41,7 +41,7 @@ public class BillboardsManager : MonoBehaviour
     public void UpdatePositions(GameObject prefab, float3[] positions)
     {
         int i = GetPrefabIndex(prefab);
-        if(i != -1)
+        if (i != -1)
         {
             billboardRenderers[i].RefreshPositions(new NativeArray<float3>(positions, Allocator.Persistent));
         }
@@ -49,7 +49,7 @@ public class BillboardsManager : MonoBehaviour
 
     public void UpdatePositions(int i, float3[] positions)
     {
-        if(i > -1 && i < billboardRenderers.Count)
+        if (i > -1 && i < billboardRenderers.Count)
         {
             billboardRenderers[i].RefreshPositions(new NativeArray<float3>(positions, Allocator.Persistent));
         }
@@ -57,9 +57,9 @@ public class BillboardsManager : MonoBehaviour
 
     int GetPrefabIndex(GameObject prefab)
     {
-        for(int i=0; i<billboardTypes.Count; i++)
+        for (int i = 0; i < billboardTypes.Count; i++)
         {
-            if(billboardTypes[i].prefab == prefab)
+            if (billboardTypes[i].prefab == prefab)
             {
                 return i;
             }
@@ -69,7 +69,7 @@ public class BillboardsManager : MonoBehaviour
 
     void Update()
     {
-        for(int i=0; i<billboardRenderers.Count; i++)
+        for (int i = 0; i < billboardRenderers.Count; i++)
         {
             billboardRenderers[i].Update();
         }
@@ -82,7 +82,7 @@ public class BillboardsManager : MonoBehaviour
 
     public void Dispose()
     {
-        for(int i=0; i<billboardRenderers.Count; i++)
+        for (int i = 0; i < billboardRenderers.Count; i++)
         {
             billboardRenderers[i].Dispose();
         }
