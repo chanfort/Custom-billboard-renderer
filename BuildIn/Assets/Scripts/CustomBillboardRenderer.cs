@@ -55,6 +55,7 @@ public class CustomBillboardRenderer
     public int resolution = 128;
     public bool castShadows;
     public bool receiveShadows;
+    public bool useJobifiedPassToMesh;
 
     public void Start()
     {
@@ -618,7 +619,15 @@ public class CustomBillboardRenderer
             }
         }
 
-        combinedNativeMeshes[currentBatch].PassToMesh(combinedMeshes[currentBatch]);
+        if (useJobifiedPassToMesh)
+        {
+            combinedNativeMeshes[currentBatch].PassToMeshJobified(combinedMeshes[currentBatch]);
+        }
+        else
+        {
+            combinedNativeMeshes[currentBatch].PassToMesh(combinedMeshes[currentBatch]);
+        }
+
 
         for (int i = 0; i < combinedFarIndicesList[currentBatch].Length; i++)
         {
@@ -1021,7 +1030,7 @@ public class CustomBillboardRenderer
         }
 
         public void PassToMesh(Mesh mesh)
-        {   
+        {
             // var sw = new System.Diagnostics.Stopwatch();
             // sw.Start();
             VertexAttributeDescriptor[] layout = new[]

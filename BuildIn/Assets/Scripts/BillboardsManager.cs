@@ -12,6 +12,9 @@ public class BillboardsManager : MonoBehaviour
 
     List<CustomBillboardRenderer> billboardRenderers = new List<CustomBillboardRenderer>();
 
+    public KeyCode useJobifiedPassToMeshSwitchKey;
+    bool useJobifiedPassToMesh;
+
     void Awake()
     {
         active = this;
@@ -31,7 +34,8 @@ public class BillboardsManager : MonoBehaviour
                 receiveShadows = billboardType.receiveShadows,
                 resolution = billboardType.resolution,
                 positions = new NativeArray<float3>(0, Allocator.Persistent),
-                lightTransform = lightTransform
+                lightTransform = lightTransform,
+                useJobifiedPassToMesh = useJobifiedPassToMesh
             };
             billboardRenderer.Start();
             billboardRenderers.Add(billboardRenderer);
@@ -69,6 +73,25 @@ public class BillboardsManager : MonoBehaviour
 
     void Update()
     {
+        if (Input.GetKeyDown(useJobifiedPassToMeshSwitchKey))
+        {
+            useJobifiedPassToMesh = !useJobifiedPassToMesh;
+
+            if(useJobifiedPassToMesh)
+            {
+                Debug.Log("Using JobifiedPassToMesh");
+            }
+            else
+            {
+                Debug.Log("Using regular PassToMesh");
+            }
+
+            for (int i = 0; i < billboardRenderers.Count; i++)
+            {
+                billboardRenderers[i].useJobifiedPassToMesh = useJobifiedPassToMesh;
+            }
+        }
+
         for (int i = 0; i < billboardRenderers.Count; i++)
         {
             billboardRenderers[i].Update();
