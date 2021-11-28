@@ -1021,7 +1021,9 @@ public class CustomBillboardRenderer
         }
 
         public void PassToMesh(Mesh mesh)
-        {
+        {   
+            // var sw = new System.Diagnostics.Stopwatch();
+            // sw.Start();
             VertexAttributeDescriptor[] layout = new[]
             {
                 new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
@@ -1059,8 +1061,107 @@ public class CustomBillboardRenderer
             mesh.SetSubMesh(0, subMeshDescriptor, flags);
 
             mesh.bounds = subMeshDescriptor.bounds;
+            meshCreated = true;
+
+            // Debug.Log($"{sw.Elapsed.TotalMilliseconds}");
+        }
+
+        public void PassToMeshJobified(Mesh mesh)
+        {
+            // var sw = new System.Diagnostics.Stopwatch();
+            // sw.Start();
+
+            NativeArray<VertexAttributeDescriptor> layout = new NativeArray<VertexAttributeDescriptor>(3, Allocator.TempJob);
+
+            Mesh.MeshDataArray meshDataArray = Mesh.AllocateWritableMeshData(1);
+
+            new ApplyMeshDataJob
+            {
+                verticesData = verticesData,
+                triangles = triangles,
+                meshDataArray = meshDataArray,
+                layout = layout
+            }.Schedule().Complete();
+
+            mesh.bounds = new Bounds
+            {
+                center = float3.zero,
+                extents = new float3(float.MaxValue, float.MaxValue, float.MaxValue)
+            };
+
+            // double t1 = sw.Elapsed.TotalMilliseconds;
+
+            MeshUpdateFlags flags =
+                    MeshUpdateFlags.DontRecalculateBounds |
+                    MeshUpdateFlags.DontResetBoneBounds |
+                    MeshUpdateFlags.DontValidateIndices |
+                    MeshUpdateFlags.DontNotifyMeshUsers;
+
+            Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh, flags);
 
             meshCreated = true;
+            layout.Dispose();
+
+            // Debug.Log($"{t1} {sw.Elapsed.TotalMilliseconds - t1}");
+        }
+
+        [BurstCompile]
+        struct ApplyMeshDataJob : IJob
+        {
+            public NativeArray<VertexData> verticesData;
+            public NativeArray<int> triangles;
+
+            public Mesh.MeshDataArray meshDataArray;
+            public NativeArray<VertexAttributeDescriptor> layout;
+
+            public void Execute()
+            {
+                layout[0] = new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3);
+                layout[1] = new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3);
+                layout[2] = new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2);
+
+                Mesh.MeshData meshData = meshDataArray[0];
+
+                int vertexCount = verticesData.Length;
+                int trianglesCount = triangles.Length;
+
+                meshData.SetVertexBufferParams(vertexCount, layout);
+                meshData.SetIndexBufferParams(trianglesCount, IndexFormat.UInt32);
+
+                MeshUpdateFlags flags =
+                    MeshUpdateFlags.DontRecalculateBounds |
+                    MeshUpdateFlags.DontResetBoneBounds |
+                    MeshUpdateFlags.DontValidateIndices |
+                    MeshUpdateFlags.DontNotifyMeshUsers;
+
+                var meshDataVertices = meshData.GetVertexData<VertexData>();
+
+                for (int i = 0; i < vertexCount; i++)
+                {
+                    meshDataVertices[i] = verticesData[i];
+                }
+
+                var meshDataTriangles = meshData.GetIndexData<int>();
+
+                for (int i = 0; i < trianglesCount; i++)
+                {
+                    meshDataTriangles[i] = triangles[i];
+                }
+
+                meshData.subMeshCount = 1;
+                SubMeshDescriptor subMeshDescriptor = new SubMeshDescriptor
+                {
+                    indexCount = triangles.Length,
+                    topology = MeshTopology.Triangles,
+                    bounds = new Bounds
+                    {
+                        center = float3.zero,
+                        extents = new float3(float.MaxValue, float.MaxValue, float.MaxValue)
+                    }
+                };
+
+                meshData.SetSubMesh(0, subMeshDescriptor, flags);
+            }
         }
 
         public void Dispose()
