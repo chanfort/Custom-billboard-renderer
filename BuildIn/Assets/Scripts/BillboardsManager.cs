@@ -10,7 +10,7 @@ public class BillboardsManager : MonoBehaviour
     public Material billboardMaterial;
     public List<BillboardType> billboardTypes = new List<BillboardType>();
 
-    List<CustomBillboardRenderer> billboardRenderers = new List<CustomBillboardRenderer>();
+    List<ShiftedBillboardRenderer> billboardRenderers = new List<ShiftedBillboardRenderer>();
 
     public KeyCode useJobifiedPassToMeshSwitchKey;
     bool useJobifiedPassToMesh;
@@ -22,7 +22,7 @@ public class BillboardsManager : MonoBehaviour
         for (int i = 0; i < billboardTypes.Count; i++)
         {
             BillboardType billboardType = billboardTypes[i];
-            CustomBillboardRenderer billboardRenderer = new CustomBillboardRenderer
+            ShiftedBillboardRenderer billboardRenderer = new ShiftedBillboardRenderer
             {
                 billboardMaterial = Instantiate(billboardMaterial),
                 n = 0,

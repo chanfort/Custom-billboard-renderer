@@ -46,6 +46,7 @@
      <Compile Include="Assets/Scripts/Sort.cs" />
      <Compile Include="Assets/Scripts/CustomBillboardRenderer.cs" />
      <Compile Include="Assets/Scripts/Vectors.cs" />
+     <Compile Include="Assets/Scripts/ShiftedBillboardRenderer.cs" />
     <Reference Include="UnityEngine">
         <HintPath>/Applications/Unity/Hub/Editor/2021.1.28f1/Unity.app/Contents/Managed/UnityEngine/UnityEngine.dll</HintPath>
     </Reference>
